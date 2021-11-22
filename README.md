@@ -49,4 +49,4 @@ ex=java.lang.IllegalStateException: 예외 발생!
 ex=java.lang.IllegalStateException: 예외 발생!
 ```
 
-트랜잭션ID와 깊이를 표현하는 방법은 기존 정보를 이어 받아야 하기 때문에 단순히 로그만 남긴다고 해결할 수 있는 것은 아니다.
+트랜잭션 ID 와 깊이를 표현하는 방법은 기존 정보를 이어 받아야 하기 때문에 단순히 로그만 남긴다고 해결할 수 있는 것은 아니다.
