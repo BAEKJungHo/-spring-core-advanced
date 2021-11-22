@@ -1,6 +1,6 @@
 # 스프링 핵심 원리 고급편
 
-## 로그 추적기
+## [로그 추적기](https://github.com/BAEKJungHo/spring-core-advanced/tree/main/advanced/src/main/java/hello/advanced)
 
 여러분이 새로운 회사에 입사했는데, 수 년간 운영중인 거대한 프로젝트에 투입되었다. 전체 소스 코드는 수
 십만 라인이고, 클래스 수도 수 백개 이상이다.
