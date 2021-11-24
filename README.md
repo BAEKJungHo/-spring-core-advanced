@@ -192,6 +192,12 @@ public class FieldServiceTest {
 
 ## ThreadLocal
 
+싱글톤 빈에서 상태값을 유지해야하는 경우에 동시성 이슈를 해결하기 위해서 `ThreadLocal`을 지원한다.
+
+> 주의
+> 
+> 해당 쓰레드가 쓰레드 로컬을 모두 사용하고 나면 ThreadLocal.remove() 를 호출해서 쓰레드 로컬에 저장된 값을 제거해주어야 한다. 제거하지 않으면 특정 상황에서 메모리 누수 등의 문제가 발생할 수 있다.
+
 쓰레드 로컬은 해당 쓰레드만 접근할 수 있는 특별한 저장소를 말한다. 쉽게 이야기해서 물건 보관 창구를
 떠올리면 된다. 여러 사람이 같은 물건 보관 창구를 사용하더라도 창구 직원은 사용자를 인식해서
 사용자별로 확실하게 물건을 구분해준다.
@@ -205,3 +211,101 @@ public class FieldServiceTest {
 userB 데이터를 반환해준다.
 
 자바는 언어차원에서 쓰레드 로컬을 지원하기 위한 java.lang.ThreadLocal 클래스를 제공한다.
+
+```java
+@Slf4j
+public class ThreadLocalService {
+
+    // 기존 전역 변수를 ThreadLocal 로 변경했다.
+    private ThreadLocal<String> nameStore = new ThreadLocal<>();
+
+    public String logic(String name) {
+        log.info("저장 name={} -> nameStore={}", name, nameStore.get());
+        nameStore.set(name);
+        sleep(1000);
+        log.info("조회 nameStore={}", nameStore.get());
+        return nameStore.get();
+    }
+
+    private void sleep(int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+동시성 문제에서 다뤘던 FieldLogTrace 코드를 동시성 문제를 해결하기 위해 ThreadLocal 을 적용하면 다음과 같다.
+
+```java
+@Slf4j
+public class ThreadLocalLogTrace implements LogTrace {
+
+    private static final String START_PREFIX = "-->";
+    private static final String COMPLETE_PREFIX = "<--";
+    private static final String EX_PREFIX = "<X-";
+
+    private ThreadLocal<TraceId> traceIdHolder = new ThreadLocal<>();
+
+    @Override
+    public TraceStatus begin(String message) {
+        syncTraceId();
+        TraceId traceId = traceIdHolder.get();
+        Long startTimeMs = System.currentTimeMillis();
+        log.info("[{}] {}{}", traceId.getId(), addSpace(START_PREFIX, traceId.getLevel()), message);
+        return new TraceStatus(traceId, startTimeMs, message);
+    }
+
+    private void syncTraceId() {
+        TraceId traceId = traceIdHolder.get();
+        if (traceId == null) {
+            traceIdHolder.set(new TraceId());
+        } else {
+            traceIdHolder.set(traceId.createNextId());
+        }
+    }
+
+    @Override
+    public void end(TraceStatus status) {
+        complete(status, null);
+    }
+
+    @Override
+    public void exception(TraceStatus status, Exception e) {
+        complete(status, e);
+    }
+
+    private void complete(TraceStatus status, Exception e) {
+        Long stopTimeMs = System.currentTimeMillis();
+        long resultTimeMs = stopTimeMs - status.getStartTimeMs();
+        TraceId traceId = status.getTraceId();
+        if (e == null) {
+            log.info("[{}] {}{} time={}ms", traceId.getId(), addSpace(COMPLETE_PREFIX, traceId.getLevel()), status.getMessage(), resultTimeMs);
+        } else {
+            log.info("[{}] {}{} time={}ms ex={}", traceId.getId(), addSpace(EX_PREFIX, traceId.getLevel()), status.getMessage(), resultTimeMs, e.toString());
+        }
+
+        releaseTraceId();
+    }
+
+    private void releaseTraceId() {
+        TraceId traceId = traceIdHolder.get();
+        if (traceId.isFirstLevel()) {
+            traceIdHolder.remove(); // destroy
+        } else {
+            traceIdHolder.set(traceId.createPreviousId());
+        }
+    }
+
+    private static String addSpace(String prefix, int level) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < level; i++) {
+            sb.append((i == level - 1) ? "|" + prefix : "|   ");
+        }
+        return sb.toString();
+    }
+
+}
+```
