@@ -310,7 +310,7 @@ public class ThreadLocalLogTrace implements LogTrace {
 }
 ```
 
-### ThreadLocal 사용 시 주의할 점 !
+### ThreadLocal 사용 시 주의할 점 !!
 
 쓰레드 로컬의 값을 사용 후 제거하지 않고 그냥 두면 WAS(톰캣)처럼 쓰레드 풀을 사용하는 경우에 심각한 문제가 발생할 수 있다.
 
