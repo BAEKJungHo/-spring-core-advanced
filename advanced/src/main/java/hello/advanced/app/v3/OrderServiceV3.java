@@ -13,7 +13,6 @@ public class OrderServiceV3 {
     private final LogTrace trace;
 
     public void orderItem(String itemId) {
-
         TraceStatus status = null;
         try {
             status = trace.begin("OrderService.orderItem()");

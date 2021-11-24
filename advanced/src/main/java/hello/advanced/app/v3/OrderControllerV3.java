@@ -14,9 +14,13 @@ public class OrderControllerV3 {
     private final OrderServiceV3 orderService;
     private final LogTrace trace;
 
+    /**
+     * v2 때와는 달리 파라미터로 traceId 를 넘길필요가 없다. 하지만 아직 동시성 문제가 남아있다.
+     * @param itemId
+     * @return
+     */
     @GetMapping("/v3/request")
     public String request(String itemId) {
-
         TraceStatus status = null;
         try {
             status = trace.begin("OrderController.request()");

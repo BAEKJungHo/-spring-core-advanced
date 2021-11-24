@@ -12,6 +12,7 @@ public class FieldServiceTest {
     @Test
     void field() {
         log.info("main start");
+        // 스레드 2개 생성
         Runnable userA = () -> {
             fieldService.logic("userA");
         };
@@ -22,14 +23,14 @@ public class FieldServiceTest {
         Thread threadA = new Thread(userA);
         threadA.setName("thread-A");
         Thread threadB = new Thread(userB);
-        threadB.setName("thread-B");
+        threadA.setName("thread-B");
 
         threadA.start();
-//        sleep(2000); //동시성 문제 발생X
-        sleep(100); //동시성 문제 발생O
+        // sleep(2000); // 동시성 문제 발생 X
+        sleep(100); // 동시성 문제 발생 O
         threadB.start();
 
-        sleep(3000); //메인 쓰레드 종료 대기
+        sleep(3000); // 메인 쓰레드 종료 대기
         log.info("main exit");
     }
 

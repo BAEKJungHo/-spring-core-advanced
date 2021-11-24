@@ -4,6 +4,9 @@ import hello.advanced.trace.TraceId;
 import hello.advanced.trace.TraceStatus;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 파라미터로 traceId 를 넘겨서 service 에서는 nextId 를 구하여 사용하는 것을 개선하기 위해 만든 클래스
+ */
 @Slf4j
 public class FieldLogTrace implements LogTrace {
 
@@ -11,7 +14,7 @@ public class FieldLogTrace implements LogTrace {
     private static final String COMPLETE_PREFIX = "<--";
     private static final String EX_PREFIX = "<X-";
 
-    private TraceId traceIdHolder; //traceId 동기화, 동시성 이슈 발생
+    private TraceId traceIdHolder; // traceId 동기화, 동시성 이슈 발생
 
     @Override
     public TraceStatus begin(String message) {
@@ -54,9 +57,13 @@ public class FieldLogTrace implements LogTrace {
         releaseTraceId();
     }
 
+    /**
+     * 메서드를 추가로 호출할 때에는 level 이 하나 증가하지만,
+     * 메서드 호출이 끝나면 level 이 하나 감소해야 한다.
+     */
     private void releaseTraceId() {
-        if (traceIdHolder.isFirstLevel()) {
-            traceIdHolder = null; //destroy
+        if (traceIdHolder.isFirstLevel()) { // 최초 호출
+            traceIdHolder = null; // destroy
         } else {
             traceIdHolder = traceIdHolder.createPreviousId();
         }
