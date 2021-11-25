@@ -437,3 +437,108 @@ try {
 V4 는 단순히 템플릿 메서드 패턴을 적용해서 소스코드 몇줄을 줄인 것이 전부가 아니다.
 로그를 남기는 부분에 단일 책임 원칙(SRP)을 지킨 것이다. 변경 지점을 하나로 모아서 변경에 쉽게 대처할
 수 있는 구조를 만든 것이다.
+
+## 전략 패턴(Strategy Pattern)
+
+전략 패턴은 변하지 않는 부분을 `Context` 라는 곳에 두고, 변하는 부분을 `Strategy` 라는 인터페이스를
+만들고 해당 인터페이스를 구현하도록 해서 문제를 해결한다. 상속이 아니라 위임으로 문제를 해결하는
+것이다. 전략 패턴에서 `Context` 는 변하지 않는 템플릿 역할을 하고, `Strategy` 는 변하는 알고리즘 역할을 한다.
+
+![IMAGES](/images/strategy.JPG)
+
+### 필드에 전략을 보관하는 방식
+
+```java
+/**
+ * 필드에 전략을 보관하는 방식
+ */
+@Slf4j
+public class ContextV1 {
+
+    private Strategy strategy;
+
+    public ContextV1(Strategy strategy) {
+        this.strategy = strategy;
+    }
+
+    public void execute() {
+        long startTime = System.currentTimeMillis();
+        //비즈니스 로직 실행
+        strategy.call(); //위임
+        //비즈니스 로직 종료
+        long endTime = System.currentTimeMillis();
+        long resultTime = endTime - startTime;
+        log.info("resultTime={}", resultTime);
+    }
+}
+```
+```java
+/**
+ * 전략 패턴 사용
+ */
+@Test
+void strategyV1() {
+    StrategyLogic1 strategyLogic1 = new StrategyLogic1();
+    ContextV1 context1 = new ContextV1(strategyLogic1);
+    context1.execute();
+
+    StrategyLogic2 strategyLogic2 = new StrategyLogic2();
+    ContextV1 context2 = new ContextV1(strategyLogic2);
+    context2.execute();
+}
+```
+
+ContextV1 은 변하지 않는 로직을 가지고 있는 템플릿 역할을 하는 코드이다. 전략 패턴에서는 이것을
+컨텍스트(문맥)이라 한다.
+쉽게 이야기해서 컨텍스트(문맥)는 크게 변하지 않지만, 그 문맥 속에서 strategy 를 통해 일부 전략이
+변경된다 생각하면 된다.
+
+__전략 패턴의 핵심은 Context 는 Strategy 인터페이스에만 의존한다는 점이다. 덕분에 Strategy 의
+구현체를 변경하거나 새로 만들어도 Context 코드에는 영향을 주지 않는다.__
+
+어디서 많이 본 코드 같지 않은가? 그렇다. 바로 스프링에서 의존관계 주입에서 사용하는 방식이 바로 전략 패턴이다.
+
+하지만 위 필드에 전략을 보관하는 방식은 `선 조립 후, 실행` 하는 경우에 적합하다.
+
+이 방식의 단점은 Context 와 Strategy 를 조립한 이후에는 전략을 변경하기가 번거롭다는 점이다. 물론
+Context 에 setter 를 제공해서 Strategy 를 넘겨 받아 변경하면 되지만, Context 를 싱글톤으로
+사용할 때는 동시성 이슈 등 고려할 점이 많다.
+
+### 전략을 파라미터로 전달 받는 방식
+
+```java
+/**
+ * 전략을 파라미터로 전달 받는 방식
+ */
+@Slf4j
+public class ContextV2 {
+
+    public void execute(Strategy strategy) {
+        long startTime = System.currentTimeMillis();
+        //비즈니스 로직 실행
+        strategy.call(); //위임
+        //비즈니스 로직 종료
+        long endTime = System.currentTimeMillis();
+        long resultTime = endTime - startTime;
+        log.info("resultTime={}", resultTime);
+    }
+}
+```
+```java
+/**
+ * 전략 패턴 적용
+ */
+@Test
+void strategyV1() {
+    ContextV2 context = new ContextV2();
+    context.execute(new StrategyLogic1());
+    context.execute(new StrategyLogic2());
+}
+```
+
+클라이언트는 Context 를 실행하는 시점에 원하는 Strategy 를 전달할 수 있다. 따라서 이전 방식과
+비교해서 원하는 전략을 더욱 유연하게 변경할 수 있다.
+테스트 코드를 보면 하나의 Context 만 생성한다. 그리고 하나의 Context 에 실행 시점에 여러 전략을
+인수로 전달해서 유연하게 실행하는 것을 확인할 수 있다.
+
+
