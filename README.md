@@ -564,3 +564,54 @@ ContextV2 는 변하지 않는 템플릿 역할을 한다. 그리고 변하는 �
   - 자바 8 이전에는 보통 하나의 메소드를 가진 인터페이스를 구현하고, 주로 익명 내부 클래스를 사용했다. 최근에는 주로 람다를 사용한다.
 
 - 스프링에서는 ContextV2 와 같은 방식의 전략 패턴을 템플릿 콜백 패턴이라 한다. 전략 패턴에서 Context 가 템플릿 역할을 하고, Strategy 부분이 콜백으로 넘어온다 생각하면 된다.
+
+# 프록시와 데코레이터 패턴
+
+예제는 크게 3가지 상황으로 만든다. 아래 세 가지 상황은 다 실무에서 사용되는 방식이다.
+
+- v1 - 인터페이스와 구현 클래스 - 스프링 빈으로 수동 등록
+- v2 - 인터페이스 없는 구체 클래스 - 스프링 빈으로 수동 등록
+- v3 - 컴포넌트 스캔으로 스프링 빈 자동 등록
+
+### 스프링 빈 수동 등록 - v1
+
+```java
+// 스프링 빈으로 수동 등록
+@Configuration
+public class AppV1Config {
+
+    @Bean
+    public OrderControllerV1 orderControllerV1() {
+        return new OrderControllerV1Impl(orderServiceV1());
+    }
+
+    @Bean
+    public OrderServiceV1 orderServiceV1() {
+        return new OrderServiceV1Impl(orderRepositoryV1());
+    }
+
+    @Bean
+    public OrderRepositoryV1 orderRepositoryV1() {
+        return new OrderRepositoryV1Impl();
+    }
+
+}
+```
+
+```java
+@Import(AppV1Config.class)
+@SpringBootApplication(scanBasePackages = "hello.proxy.app") // 주의
+public class ProxyApplication {
+ public static void main(String[] args) {
+    SpringApplication.run(ProxyApplication.class, args);
+ }
+}
+```
+
+- `@Import(AppV1Config.class)`
+  - 클래스를 스프링 빈으로 등록한다. 여기서는 AppV1Config.class 를
+스프링 빈으로 등록한다. 일반적으로 @Configuration 같은 설정 파일을 등록할 때 사용하지만, 스프링
+빈을 등록할 때도 사용할 수 있다.
+- `@SpringBootApplication(scanBasePackages = "hello.proxy.app")`
+  - @ComponentScan 의 기능과 같다. 컴포넌트 스캔을 시작할 위치를 지정한다. 이 값을 설정하면 해당 패키지와 그 하위 패키지를
+컴포넌트 스캔한다. 이 값을 사용하지 않으면 ProxyApplication 이 있는 패키지와 그 하위 패키지를 스캔한다. 참고로 v3 에서 지금 설정한 컴포넌트 스캔 기능을 사용한다.
