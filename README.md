@@ -615,3 +615,16 @@ public class ProxyApplication {
 - `@SpringBootApplication(scanBasePackages = "hello.proxy.app")`
   - @ComponentScan 의 기능과 같다. 컴포넌트 스캔을 시작할 위치를 지정한다. 이 값을 설정하면 해당 패키지와 그 하위 패키지를
 컴포넌트 스캔한다. 이 값을 사용하지 않으면 ProxyApplication 이 있는 패키지와 그 하위 패키지를 스캔한다. 참고로 v3 에서 지금 설정한 컴포넌트 스캔 기능을 사용한다.
+
+### 스프링 빈 수동 등록 - v2
+
+컨트롤러를 사용하기위해서 스프링에서는 `@RequestMapping` 혹은 `@Controller` 어노테이션이 필요한데, ComponentScan 대상이 되는 @Controller 를 사용하면 자동으로 빈으로 등록된다.
+따라서 수동 빈 등록을 사용하고 싶으면 @RequestMapping 을 사용하면 된다.
+
+- `@Import({AppV1Config.class, AppV2Config.class})`
+
+### 스프링 빈 자동 등록 - v3 : ComponentScan
+
+ProxyApplication 에서 @SpringBootApplication(scanBasePackages = "hello.proxy.app") 를
+사용했고, 각각 @RestController , @Service , @Repository 애노테이션을 가지고 있기 때문에
+컴포넌트 스캔의 대상이 된다.
